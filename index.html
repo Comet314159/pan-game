@@ -48,6 +48,7 @@ html,body{margin:0;height:100%;height:100dvh;-webkit-touch-callout:none;backgrou
 @keyframes mile{0%{opacity:0;transform:translateY(20px) scale(.7)}15%{opacity:1;transform:scale(1.1)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-20px)}}
 .pt{position:absolute;font-size:24px;pointer-events:none;z-index:2;animation:pt .85s ease-out forwards}
 @keyframes pt{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(.4);opacity:0}}
+#pause{width:38px;height:38px;border-radius:50%;border:2px solid var(--fg,#4a2610);background:#fff5;color:var(--fg,#4a2610);font-size:15px;font-weight:900;cursor:pointer;margin-top:2px;padding:0}
 .screen{position:absolute;inset:0;background:#2b1a10e6;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:12px;z-index:5}
 .screen.hide{display:none}
 h1{margin:0;font-size:30px;line-height:1.3}
@@ -64,7 +65,7 @@ p{margin:0;line-height:1.6;font-size:14px;opacity:.92}
   <div class="hud">
     <div><small>焼いた数</small><b id="cnt">0</b></div>
     <div style="text-align:center"><small>連続会心</small><b id="chain">0</b></div>
-    <div style="text-align:right"><small>残り</small><b id="time">75</b></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><div style="text-align:right"><small>残り</small><b id="time">75</b></div><button id="pause" aria-label="一時停止">⏸</button></div>
   </div>
   <div id="timebar"><div id="timefill"></div></div>
   <div id="earth"></div>
@@ -88,7 +89,17 @@ p{margin:0;line-height:1.6;font-size:14px;opacity:.92}
     <p>長押しで加熱 ／ 黄色いゾーンで離すと会心</p>
     <button class="btn" id="start">タップでスタート</button>
     <div id="bestline" style="font-size:13px;opacity:.8"></div>
+    <button class="btn sub bgmbtn">BGM：オン</button>
     <button class="btn sub" id="reset">記録をリセット</button>
+  </div>
+
+  <div class="screen hide" id="pausescr">
+    <div class="big">⏸</div>
+    <h1>一時停止</h1>
+    <button class="btn" id="resume">再開</button>
+    <button class="btn sub" id="restart">最初からやり直す</button>
+    <button class="btn sub" id="totitle">タイトルへ戻る</button>
+    <button class="btn sub bgmbtn">BGM：オン</button>
   </div>
 
   <div class="screen hide" id="over">
@@ -116,7 +127,7 @@ const REFS=[[0.2,'ふつうのパン'],[0.5,'スイカ'],[1.7,'人間'],[5,'ゾ�
 // 背景の段階 [この大きさ未満, 背景, 文字色]
 const BANDS=[[1.7,'linear-gradient(#ffd9a0,#f6a85a 55%,#8a4a22)','#4a2610'],[333,'linear-gradient(#bfe6ff,#e6f6ff 60%,#9fd18b)','#23405a'],[8849,'linear-gradient(#4f9fe8,#cfe9ff)','#12304d'],[100000,'linear-gradient(#0b1d4d,#2f63b8)','#ffffff'],[3474000,'linear-gradient(#02030a,#0a0a2a)','#ffffff'],[Infinity,'linear-gradient(#0a0220,#3a0f5c)','#ffe9ff']];
 const refIdx=m=>{let k=0;for(let i=0;i<REFS.length;i++)if(m>=REFS[i][0])k=i;return k;};
-let band=-1;
+let band=-1,raf=0;
 let state='title',size=START,count=0,chain=0,maxChain=0,perfects=0,left=TIME,heat=0,holding=false,zoneL=70,lastT=0,locked=false;
 let rec=JSON.parse(localStorage.getItem('panRec')||'{"best":0,"clear":0,"fast":0}');
 
@@ -138,6 +149,40 @@ function beep(f,d,type='square',v=.07,slide=0){
     g.gain.value=v;g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);
     o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d);
   }catch(e){}
+}
+
+// ---- BGM（外部ファイルなし。ブラウザ内で合成） ----
+function ensureAC(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();}catch(e){}return ac;}
+let bgmOn=localStorage.getItem('panBgm')!=='0',bgmTimer=null,bgmStep=0,bgmNext=0;
+const MEL=[523,0,659,0,784,659,523,0, 440,0,523,0,659,523,440,0, 349,0,440,0,523,440,349,0, 392,0,494,0,587,494,392,0];
+const BASS=[131,110,87,98];
+const STEP=0.15;
+function tone(f,t,d,type,v){
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;o.frequency.value=f;
+  g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.02);
+}
+function bgmSchedule(){
+  if(!ac)return;
+  while(bgmNext<ac.currentTime+.35){
+    const i=bgmStep%32,m=MEL[i];
+    if(m)tone(m,bgmNext,STEP*1.6,'triangle',.05);
+    if(i%4===0)tone(BASS[Math.floor(i/8)],bgmNext,STEP*3,'sine',.07);
+    if(i%2===1)tone(1800,bgmNext,.03,'square',.006); // 軽いハット
+    bgmNext+=STEP;bgmStep++;
+  }
+}
+function startBgm(){
+  if(!bgmOn||bgmTimer)return;
+  if(!ensureAC())return;
+  bgmNext=ac.currentTime+.05;bgmTimer=setInterval(bgmSchedule,100);
+}
+function stopBgm(){clearInterval(bgmTimer);bgmTimer=null;}
+function bgmLabel(){document.querySelectorAll('.bgmbtn').forEach(b=>b.textContent='BGM：'+(bgmOn?'オン':'オフ'));}
+function toggleBgm(){
+  bgmOn=!bgmOn;localStorage.setItem('panBgm',bgmOn?'1':'0');bgmLabel();
+  if(!bgmOn)stopBgm();else if(state==='play')startBgm();
 }
 
 // ---- view ----
@@ -185,7 +230,9 @@ function startGame(){
   size=START;count=0;chain=0;maxChain=0;perfects=0;left=TIME;heat=0;holding=false;locked=false;
   state='play';$('title').classList.add('hide');$('over').classList.add('hide');
   setZone();tint(0);render();lastT=performance.now();
-  requestAnimationFrame(loop);
+  $('pausescr').classList.add('hide');
+  cancelAnimationFrame(raf);startBgm();
+  raf=requestAnimationFrame(loop);
 }
 function loop(t){
   if(state!=='play')return;
@@ -201,7 +248,26 @@ function loop(t){
   bread.style.translate=holding?`${(Math.random()-.5)*heat/12}px ${(Math.random()-.5)*heat/12}px`:'';
   if(left<=0){left=0;render();return end(false);}
   render();
-  requestAnimationFrame(loop);
+  raf=requestAnimationFrame(loop);
+}
+// ---- 一時停止 ----
+function pause(){
+  if(state!=='play')return;
+  state='paused';holding=false;cancelAnimationFrame(raf);stopBgm();
+  heat=0;$('fill').style.width='0';$('gauge').classList.remove('inzone');bread.style.translate='';tint(0); // 加熱中の一振りは破棄
+  $('pausescr').classList.remove('hide');
+}
+function resume(){
+  if(state!=='paused')return;
+  state='play';locked=false;lastT=performance.now();
+  $('pausescr').classList.add('hide');startBgm();
+  raf=requestAnimationFrame(loop);
+}
+function toTitle(){
+  state='title';holding=false;cancelAnimationFrame(raf);stopBgm();
+  size=START;count=0;chain=0;left=TIME;heat=0;locked=false;
+  $('fill').style.width='0';tint(0);bread.style.translate='';render();showBest();
+  $('pausescr').classList.add('hide');$('over').classList.add('hide');$('title').classList.remove('hide');
 }
 function down(){
   if(state!=='play'||locked||holding)return;
@@ -247,7 +313,9 @@ function release(){
   setTimeout(()=>{heat=0;$('fill').style.width='0';tint(0);setZone();locked=false;},320);
 }
 function end(clear){
-  state='over';holding=false;
+  state='over';holding=false;stopBgm();
+  $('gauge').classList.remove('inzone');bread.style.translate='';
+  if(clear)[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.3,'triangle',.1),i*140));
   const newBest=size>rec.best;
   if(newBest)rec.best=size;
   if(clear){rec.clear++;if(!rec.fast||count<rec.fast)rec.fast=count;}
@@ -269,7 +337,7 @@ function end(clear){
 
 // ---- events ----
 // タッチ・マウス共通（pointercancel では離さない：長押しでOSが割り込んでも加熱を続ける）
-const onScreen=e=>!!e.target.closest('.screen');
+const onScreen=e=>!!e.target.closest('.screen,#pause');
 app.addEventListener('pointerdown',e=>{if(onScreen(e))return;e.preventDefault();down();});
 window.addEventListener('pointerup',up);
 // iOS/Android の長押しメニュー・選択・スクロールを止める
@@ -280,6 +348,13 @@ window.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat){e.preventD
 window.addEventListener('keyup',e=>{if(e.code==='Space')up();});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 $('start').addEventListener('click',startGame);
+$('pause').addEventListener('click',pause);
+$('resume').addEventListener('click',resume);
+$('restart').addEventListener('click',startGame);
+$('totitle').addEventListener('click',toTitle);
+document.querySelectorAll('.bgmbtn').forEach(b=>b.addEventListener('click',toggleBgm));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
+window.addEventListener('keydown',e=>{if(e.code==='Escape'||e.code==='KeyP'){state==='play'?pause():resume();}});
 $('retry').addEventListener('click',startGame);
 $('reset').addEventListener('click',()=>{
   if(confirm('記録がすべて消えます。よろしいですか？')){rec={best:0,clear:0,fast:0};localStorage.removeItem('panRec');showBest();}
@@ -292,7 +367,7 @@ $('share').addEventListener('click',async()=>{
   }catch(e){}
 });
 function showBest(){$('bestline').textContent=rec.best?`自己ベスト：${fmt(rec.best)}`+(rec.fast?` ／ 最短クリア：${rec.fast}回`:''):'';}
-showBest();render();
+bgmLabel();showBest();render();
 })();
 </script>
 </body>
