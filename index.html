@@ -7,29 +7,47 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{margin:0;height:100%;height:100dvh;-webkit-touch-callout:none;background:#2b1a10;color:#fff;font-family:"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;overflow:hidden;touch-action:none}
-#app{position:relative;max-width:480px;height:100%;height:100dvh;touch-action:none;margin:0 auto;background:linear-gradient(#ffd9a0,#f6a85a 55%,#8a4a22);overflow:hidden}
+#app{position:relative;max-width:480px;height:100%;height:100dvh;touch-action:none;margin:0 auto;background:var(--bg,linear-gradient(#ffd9a0,#f6a85a 55%,#8a4a22));color:var(--fg,#4a2610);overflow:hidden}
+#app::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity 1s;pointer-events:none;
+ background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 20%,#fff,transparent),radial-gradient(2px 2px at 40% 70%,#fff,transparent),radial-gradient(1px 1px at 85% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 10% 85%,#fff,transparent),radial-gradient(1px 1px at 55% 45%,#fff,transparent),radial-gradient(1.5px 1.5px at 90% 10%,#fff,transparent),radial-gradient(1px 1px at 30% 55%,#fff,transparent)}
+#app[data-band="4"]::before,#app[data-band="5"]::before{opacity:1}
 #app.shake{animation:shake .25s}
+#app.shake2{animation:shake2 .45s}
+@keyframes shake2{10%{transform:translate(-14px,8px)}25%{transform:translate(12px,-8px)}40%{transform:translate(-10px,6px)}55%{transform:translate(8px,-5px)}70%{transform:translate(-5px,3px)}85%{transform:translate(3px,-2px)}}
 @keyframes shake{25%{transform:translate(-6px,3px)}50%{transform:translate(6px,-3px)}75%{transform:translate(-3px,2px)}}
-.hud{position:absolute;top:0;left:0;right:0;padding:10px 12px;display:flex;justify-content:space-between;font-weight:700;color:#4a2610;text-shadow:0 1px 0 #fff8}
+.hud{position:absolute;top:0;left:0;right:0;padding:10px 12px;display:flex;justify-content:space-between;font-weight:700;color:var(--fg,#4a2610);text-shadow:0 1px 0 #fff4}
 .hud small{display:block;font-size:11px;opacity:.75;font-weight:600}
 .hud b{font-size:22px}
 #timebar{position:absolute;top:58px;left:12px;right:12px;height:8px;background:#0003;border-radius:4px;overflow:hidden}
 #timefill{height:100%;width:100%;background:#fff;transition:width .1s linear}
-#earth{position:absolute;top:72px;left:0;right:0;text-align:center;font-weight:800;color:#4a2610;font-size:14px}
-#stage{position:absolute;top:100px;bottom:170px;left:0;right:0;display:flex;align-items:center;justify-content:center}
+#earth{position:absolute;top:70px;left:0;right:0;text-align:center;font-weight:800;color:var(--fg,#4a2610);font-size:14px}
+#cmp{position:absolute;top:90px;left:0;right:0;text-align:center;font-weight:700;color:var(--fg,#4a2610);font-size:12px;opacity:.9}
+#stage{position:absolute;top:112px;bottom:170px;left:0;right:0;display:flex;align-items:center;justify-content:center}
 #bread{line-height:1;transition:transform .12s ease-out;will-change:transform,filter}
 #bread.pop{animation:pop .3s}
 @keyframes pop{40%{transform:scale(1.25)}}
-#size{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-weight:800;color:#4a2610;text-shadow:0 1px 0 #fff8;font-size:15px}
+#size{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-weight:800;color:var(--fg,#4a2610);text-shadow:0 1px 0 #fff4;font-size:15px}
 #result{position:absolute;top:34%;left:0;right:0;text-align:center;font-size:34px;font-weight:900;pointer-events:none;opacity:0;text-shadow:0 3px 0 #0006,0 0 12px #000a}
 #result.show{animation:res .9s}
 @keyframes res{0%{opacity:0;transform:scale(.5)}15%{opacity:1;transform:scale(1.2)}70%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-30px)}}
 #gaugewrap{position:absolute;left:20px;right:20px;bottom:56px;height:46px}
-#gauge{position:relative;height:100%;background:#3b1d0acc;border-radius:23px;overflow:hidden;border:3px solid #fff}
+#gauge.inzone{box-shadow:0 0 18px 6px #ffe066;border-color:#ffe066}
+#gauge{transition:box-shadow .1s;position:relative;height:100%;background:#3b1d0acc;border-radius:23px;overflow:hidden;border:3px solid #fff}
 #zone{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,#ffe066,#ffe066 8px,#ffc800 8px,#ffc800 16px);opacity:.95}
 #fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#ff9a3c,#e8421c)}
 #gtext{position:absolute;left:0;right:0;bottom:-24px;text-align:center;font-size:12px;font-weight:700;color:#fff}
 #hint{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:13px;opacity:.9}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:3}
+#flash.go{animation:flash .35s}
+@keyframes flash{0%{opacity:.7}100%{opacity:0}}
+#rumble{position:absolute;top:46%;font-size:52px;font-weight:900;letter-spacing:4px;color:#fff;-webkit-text-stroke:2px #5a1d00;pointer-events:none;opacity:0;z-index:2}
+#rumble.go{animation:rumble .8s}
+@keyframes rumble{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.3) rotate(-4deg)}30%{transform:scale(1.1) rotate(3deg)}45%{transform:scale(1.2) rotate(-3deg)}100%{opacity:0;transform:scale(1.4) translateY(-20px)}}
+#mile{position:absolute;top:22%;left:0;right:0;text-align:center;font-size:26px;font-weight:900;color:#fff;-webkit-text-stroke:1px #000;text-shadow:0 3px 0 #0008;pointer-events:none;opacity:0;z-index:2}
+#mile.go{animation:mile 1.6s}
+@keyframes mile{0%{opacity:0;transform:translateY(20px) scale(.7)}15%{opacity:1;transform:scale(1.1)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:translateY(-20px)}}
+.pt{position:absolute;font-size:24px;pointer-events:none;z-index:2;animation:pt .85s ease-out forwards}
+@keyframes pt{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r)) scale(.4);opacity:0}}
 .screen{position:absolute;inset:0;background:#2b1a10e6;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:12px;z-index:5}
 .screen.hide{display:none}
 h1{margin:0;font-size:30px;line-height:1.3}
@@ -50,9 +68,13 @@ p{margin:0;line-height:1.6;font-size:14px;opacity:.92}
   </div>
   <div id="timebar"><div id="timefill"></div></div>
   <div id="earth"></div>
+  <div id="cmp"></div>
   <div id="stage"><div id="bread">🍞</div></div>
   <div id="size"></div>
   <div id="result"></div>
+  <div id="mile"></div>
+  <div id="rumble">ゴゴゴ</div>
+  <div id="flash"></div>
   <div id="gaugewrap">
     <div id="gauge"><div id="zone"></div><div id="fill"></div></div>
     <div id="gtext">黄色いゾーンで指を離す</div>
@@ -89,6 +111,12 @@ const ZONE_W=14;
 const MULT={perfect:2.4,good:1.5,bad:1.1};
 
 const app=$('app'),bread=$('bread');
+// サイズの目安 [メートル, 名前]
+const REFS=[[0.2,'ふつうのパン'],[0.5,'スイカ'],[1.7,'人間'],[5,'ゾウ'],[12,'バス'],[50,'ビル'],[333,'東京タワー'],[828,'ブルジュ・ハリファ'],[3776,'富士山'],[8849,'エベレスト'],[100000,'宇宙の入口'],[3474000,'月'],[EARTH,'地球']];
+// 背景の段階 [この大きさ未満, 背景, 文字色]
+const BANDS=[[1.7,'linear-gradient(#ffd9a0,#f6a85a 55%,#8a4a22)','#4a2610'],[333,'linear-gradient(#bfe6ff,#e6f6ff 60%,#9fd18b)','#23405a'],[8849,'linear-gradient(#4f9fe8,#cfe9ff)','#12304d'],[100000,'linear-gradient(#0b1d4d,#2f63b8)','#ffffff'],[3474000,'linear-gradient(#02030a,#0a0a2a)','#ffffff'],[Infinity,'linear-gradient(#0a0220,#3a0f5c)','#ffe9ff']];
+const refIdx=m=>{let k=0;for(let i=0;i<REFS.length;i++)if(m>=REFS[i][0])k=i;return k;};
+let band=-1;
 let state='title',size=START,count=0,chain=0,maxChain=0,perfects=0,left=TIME,heat=0,holding=false,zoneL=70,lastT=0,locked=false;
 let rec=JSON.parse(localStorage.getItem('panRec')||'{"best":0,"clear":0,"fast":0}');
 
@@ -118,6 +146,10 @@ function setZone(){
   const z=$('zone');z.style.left=zoneL+'%';z.style.width=ZONE_W+'%';
 }
 function render(){
+  const bi=BANDS.findIndex(b=>size<b[0]);
+  if(bi!==band){band=bi;app.dataset.band=bi;app.style.setProperty('--bg',BANDS[bi][1]);app.style.setProperty('--fg',BANDS[bi][2]);}
+  const ri=refIdx(size),nx=REFS[Math.min(ri+1,REFS.length-1)];
+  $('cmp').textContent=`いま：${REFS[ri][1]}級`+(ri<REFS.length-1?` ／ 次の目安：${nx[1]}（あと ×${(nx[0]/size).toFixed(nx[0]/size<10?1:0)}）`:'');
   $('cnt').textContent=count;$('chain').textContent=chain;$('time').textContent=Math.ceil(left);
   $('timefill').style.width=(left/TIME*100)+'%';
   $('earth').textContent=remain();
@@ -131,6 +163,18 @@ function tint(v){ // 加熱度でパンの色を変える
   const t=Math.min(1,v/100);
   bread.style.filter=`sepia(${t*.9}) saturate(${1+t*1.5}) brightness(${1.15-t*.75})`;
 }
+function burst(n,list){
+  const a=app.getBoundingClientRect(),b=bread.getBoundingClientRect();
+  const cx=b.left+b.width/2-a.left,cy=b.top+b.height/2-a.top;
+  for(let i=0;i<n;i++){
+    const e=document.createElement('span');e.className='pt';e.textContent=list[i%list.length];
+    const ang=Math.random()*Math.PI*2,d=80+Math.random()*140;
+    e.style.left=cx+'px';e.style.top=cy+'px';
+    e.style.setProperty('--dx',Math.cos(ang)*d+'px');e.style.setProperty('--dy',Math.sin(ang)*d+'px');e.style.setProperty('--r',(Math.random()*540-270)+'deg');
+    app.appendChild(e);setTimeout(()=>e.remove(),900);
+  }
+}
+function fx(id){const e=$(id);e.classList.remove('go');void e.offsetWidth;e.classList.add('go');}
 function say(text,color){
   const r=$('result');r.textContent=text;r.style.color=color;
   r.classList.remove('show');void r.offsetWidth;r.classList.add('show');
@@ -153,6 +197,8 @@ function loop(t){
   }
   $('fill').style.width=heat+'%';
   tint(heat);
+  $('gauge').classList.toggle('inzone',holding&&heat>=zoneL&&heat<=zoneL+ZONE_W);
+  bread.style.translate=holding?`${(Math.random()-.5)*heat/12}px ${(Math.random()-.5)*heat/12}px`:'';
   if(left<=0){left=0;render();return end(false);}
   render();
   requestAnimationFrame(loop);
@@ -175,12 +221,26 @@ function release(){
   let m=MULT[kind];
   if(kind==='perfect'){chain++;perfects++;if(chain>=3)m*=1.15;maxChain=Math.max(maxChain,chain);}
   else chain=0;
+  const oldRef=refIdx(size);
   size*=m;count++;
   say(msg+(kind==='perfect'&&chain>=3?` ×${chain}連`:''),col);
   bread.classList.remove('pop');void bread.offsetWidth;bread.classList.add('pop');
-  if(kind==='perfect'){app.classList.remove('shake');void app.offsetWidth;app.classList.add('shake');beep(660,.25,'triangle',.1,440);}
-  else if(kind==='good')beep(520,.15,'triangle',.08);
+  $('gauge').classList.remove('inzone');bread.style.translate='';
+  if(kind==='perfect'){
+    const c=chain>=3?'shake2':'shake';app.classList.remove('shake','shake2');void app.offsetWidth;app.classList.add(c);
+    fx('flash');
+    const r=$('rumble');r.style.left=(Math.random()<.5?'6%':'46%');r.style.fontSize=(44+Math.min(chain,6)*5)+'px';fx('rumble');
+    burst(10+Math.min(chain,5)*3,['✨','⭐','🔥','🥖']);
+    beep(660,.25,'triangle',.1,440);beep(990,.2,'sine',.06,300);
+    if(navigator.vibrate)navigator.vibrate(chain>=3?[40,30,80]:[30]);
+  }
+  else if(kind==='good'){burst(5,['✨']);beep(520,.15,'triangle',.08);if(navigator.vibrate)navigator.vibrate(15);}
   else beep(150,.25,'sawtooth',.06,-60);
+  const newRef=refIdx(size);
+  if(newRef>oldRef){
+    const mi=$('mile');mi.textContent=`${REFS[newRef][1]}サイズ突破！`;fx('mile');
+    burst(14,['🎉','✨','🍞']);beep(880,.35,'triangle',.1,880);
+  }
   if(size>=EARTH){render();return end(true);}
   // 次のパンへ
   locked=true;
@@ -204,7 +264,7 @@ function end(clear){
   $('over').classList.remove('hide');
   $('over').dataset.text=clear
     ?`まじデカすぎてパン：${count}回で地球サイズのパンを焼いた！🌍🍞（会心${perfects}回）`
-    :`まじデカすぎてパン：${fmt(size)}のパンを焼いた！🍞（会心${perfects}回）あと ×${Math.round(EARTH/size).toLocaleString('ja-JP')} で地球`;
+    :`まじデカすぎてパン：${REFS[refIdx(size)][1]}級（${fmt(size)}）のパンを焼いた！🍞（会心${perfects}回）あと ×${Math.round(EARTH/size).toLocaleString('ja-JP')} で地球`;
 }
 
 // ---- events ----
